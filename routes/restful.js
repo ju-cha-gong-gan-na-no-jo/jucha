@@ -128,6 +128,7 @@ app.get("/status/car/space", (req, res) => {
   res.json({park_setting : { all_place:park_number, rent_place:park_usenumber }});
 });
 
+//-----------------------------------------------------------------------------------
 //14쪽 실시간 현황 데이터 조회
 app.get("/status/car/data/all", (req, res) => {
   MongoClient.connect(uri, function(err, db) {
@@ -141,6 +142,7 @@ app.get("/status/car/data/all", (req, res) => {
   });
 })
 
+//------------------------------------------------------------------------------------------------------
 //   getNumberPark();
 //   getNumberNowOfCar();
 
@@ -154,6 +156,53 @@ app.get("/status/car/data/all", (req, res) => {
 //app.get("/Hello", (req, res) => {
 //  res.json({status:"OK", message:"OK", totalData:1, total:park_area});
 //})
+
+//======================================================================================================================
+//입차 데이터 추가
+
+app.post("/status/car/data/add/enter", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.body.car_number
+    const enter_time = req.body.enter_time
+    const type = req.body.type
+    if (err) throw err;
+    const dbo = db.db("parkdb");
+    dbo.collection("park").insertMany([{차량번호 :  car_number, 입차시간 : enter_time, 유형 : type}])
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//======================================================================================================================
+//출차 데이터 추가
+
+app.post("/status/car/data/add/out", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.body.car_number
+    const out_time = req.body.out_time
+    const type = req.body.type
+    if (err) throw err;
+    const dbo = db.db("parkdb");
+    dbo.collection("park").insertMany([{차량번호 :  car_number, 출차시간 : out_time, 유형 : type}])
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//-----------------------------------------------------------------------------------
+// 특정 차량 데이터 조회
+app.post("/status/car/data/id", (req, res) => {
+  const car_number = req.body.car_number
+  MongoClient.connect(uri, function(err, db) {
+    if (err) throw err;
+    const dbo = db.db("parkdb");
+    dbo.collection("park").find({"차량번호":car_number}, {projection:{_id:0}}).toArray(function(err,result) {
+      if (err) throw err;
+      res.json({found_data : result});
+      db.close();
+    });
+  });
+})
 
 
 //path parameter, request parm 0, response 0
