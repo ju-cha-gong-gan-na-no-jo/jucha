@@ -3,14 +3,8 @@ const bodyParser = require('body-parser');
 const app = express();
 const { MongoClient } = require('mongodb');
 const env =require("dotenv").config({ path: "/home/bitnami/park/.env"});
-
 var uri = process.env.uri;
 var urp = process.env.urp;
-
-let CAR_NUMBER = -111111;
-let CAR_NOW = -1111111;
-let PARK_NUMBER = -1111;
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended : false}));
 app.use(express.json());
@@ -34,22 +28,51 @@ async function getNumberOfCar(){
 getNumberOfCar().then();
 
 
-//카운트 연습
+//현재 주차되어있는 차량 대수
 async function getNumberNowOfCar(){
 	MongoClient.connect(uri, function(err, db) {
 	if (err) throw err;
 	const dbo = db.db("parkdb");
-
 	// 주차된 차량 대수 확인
-	dbo.collection("park").countDocuments({"depTime":""},{projection:{_id:0}}), function(err,numOfNowDatas) {
-		CAR_NOW = numOfNowDatas;
+	dbo.collection("park").count({"출차시간":null}, function(err,numOfNowDatas) {
+		car_all_now = numOfNowDatas;
 		if(err) throw err;
 			db.close();
-		};
+		});
   });
 	await Promise.resolve("ok");
 }
 getNumberNowOfCar().then();
+
+//현재 주차되어있는 외부인 차량 대수
+async function getNumberNowOutOfCar(){
+	MongoClient.connect(uri, function(err, db) {
+	if (err) throw err;
+	const dbo = db.db("parkdb");
+	// 주차된 차량 대수 확인
+	dbo.collection("park").count({"출차시간":null, "유형":"방문객"}, function(err,numOfNowOutDatas) {
+		car_now = numOfNowOutDatas;
+		if(err) throw err;
+			db.close();
+		});
+  });
+	await Promise.resolve("ok");
+}
+getNumberNowOutOfCar().then();
+     
+    
+    
+    
+//     ,function(err,numOfNowData) {
+// 		car_now = numOfNowData;
+// 		if(err) throw err;
+// 			db.close();
+// 		}});
+//   });
+// 	await Promise.resolve("ok");
+// }
+// getNumberNowOutOfCar().then();
+
 
 //몽고의 주차된 차량 대수 값을 CAR_NOW 변수에 넣어주는 함수
 // async function getNumberNowOfCar(){
@@ -104,21 +127,6 @@ async function getUseNumberPark(){
 }
 getUseNumberPark().then();
 
-const park = [
-  { id:0, name:"10"},
-  { id:1, name:"9"},
-  { id:2, name:"8"},
-  { id:3, name:"7"},
-  { id:4, name:"6"},
-  { id:5, name:"5"},
-  { id:6, name:"4"},
-  { id:7, name:"3"},
-  { id:8, name:"2"},
-  { id:9, name:"1"},
-  { id:10, name:"0"}
-];
-
-const park_area = 10
 
 //---------------------------------------------------------------------------------
 
@@ -126,6 +134,24 @@ const park_area = 10
 app.get("/status/car/space", (req, res) => {
   getNumberPark();
   res.json({park_setting : { all_place:park_number, rent_place:park_usenumber }});
+});
+
+//---------------------------------------------------------------------------------
+
+//주차장 실시간 주차 대수 확인
+app.get("/status/car/space/now", (req, res) => {
+  getNumberNowOfCar();
+  res.json({park_setting : { all_place:park_number, rent_place:park_usenumber ,"현재 주차 대수":car_all_now}});
+});
+
+
+//---------------------------------------------------------------------------------
+
+//주차장 실시간 주차 가능 공간 확인
+app.get("/status/car/space/possible", (req, res) => {
+  getNumberPark();
+  getNumberNowOutOfCar();
+  res.json({park_usenumber, car_now ,park_setting : { now_place:(park_usenumber - car_now)}});
 });
 
 //-----------------------------------------------------------------------------------
@@ -183,7 +209,7 @@ app.post("/status/car/data/add/out", (req, res) => {
     const type = req.body.type
     if (err) throw err;
     const dbo = db.db("parkdb");
-    dbo.collection("park").insertMany([{차량번호 :  car_number, 출차시간 : out_time, 유형 : type}])
+    dbo.collection("park").insertMany([{차량번호 : car_number, 출차시간 : out_time, 유형 : type}])
       if (err) throw err;
       res.json({status : "success"});
     });
@@ -202,6 +228,88 @@ app.post("/status/car/data/id", (req, res) => {
       db.close();
     });
   });
+})
+
+// 특정 시점 데이터 조회
+app.post("/status/car/data/detail", (req, res) => {
+  const start_time = req.body.start_time
+  const end_time = req.body.end_time
+  const date = req.body.date
+  MongoClient.connect(uri, function(err, db) {
+    if (err) throw err;
+    const dbo = db.db("parkdb");
+    dbo.collection("park").find({
+      $or: [
+      {"입차시간":{$gte:start_time}, "출차시간":{$lte:end_time} },
+      {"날짜":date},
+      {projection:{_id:0}}
+      ]
+    }).toArray(function(err,result) {
+      if (err) throw err;
+      res.json({found_data : result});
+      db.close();
+    });
+  });
+})
+
+//======================================================================================================================
+//주차현황 수정(입차시간)
+
+app.post("/status/car/data/modify/intime", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.body.car_number
+    const in_time = req.body.in_time
+    if (err) throw err;
+    const dbo = db.db("parkdb");
+    dbo.collection("park").updateMany({"차량번호" : car_number}, {$set:{"입차시간" : in_time}}, {upsert: true})
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//======================================================================================================================
+//주차현황 수정(출차시간)
+
+app.post("/status/car/data/modify/outtime", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.body.car_number
+    const out_time = req.body.out_time
+    if (err) throw err;
+    const dbo = db.db("parkdb");
+    dbo.collection("park").updateMany({"차량번호" : car_number}, {$set:{"출차시간" : out_time}}, {upsert: true})
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//======================================================================================================================
+//주차현황 수정(차량번호)
+
+app.post("/status/car/data/modify/carnumber", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.body.car_number
+    const new_number = req.body.new_number
+    if (err) throw err;
+    const dbo = db.db("parkdb");
+    dbo.collection("park").updateMany({"차량번호" : car_number}, {$set:{"차량번호" : new_number}}, {upsert: true})
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//======================================================================================================================
+//주차현황 수정(차량번호)
+
+app.post("/status/car/data/modify/type", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.body.car_number
+    const type = req.body.type
+    if (err) throw err;
+    const dbo = db.db("parkdb");
+    dbo.collection("park").updateMany({"차량번호" : car_number}, {$set:{"유형" : type}}, {upsert: true})
+      if (err) throw err;
+      res.json({status : "success"});
+    });
 })
 
 

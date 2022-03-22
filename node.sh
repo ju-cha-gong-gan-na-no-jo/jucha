@@ -18,13 +18,13 @@ then
 			then
  				result=$(kill -9 ${var})
 				echo "${var} process is killed."
-				nohup node app.js > /dev/null 2>&1 
+				nohup node app.js > /dev/null 2>&1 &
 				echo "node is running."
 				ps -ef | grep 'node'
 			fi
  		done
 	 else
- 		nohup node app.js > /dev/null 2>&1
+ 		nohup node app.js > /dev/null 2>&1 &
 		echo "node is running."
 		ps -ef | grep 'node'
  	fi
