@@ -1,5 +1,6 @@
 main:
 	docker exec -it mysql_db bash
+	
 
 wp:
 	docker exec -it wp bash

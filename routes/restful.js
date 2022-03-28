@@ -44,13 +44,47 @@ async function getNumberNowOfCar(){
 }
 getNumberNowOfCar().then();
 
+//현재 누적 출차된 고객차량 대수
+async function getNumberNowAll1OfCar(){
+	MongoClient.connect(uri, function(err, db) {
+	if (err) throw err;
+	const dbo = db.db("JUCHADB");
+	// 주차된 차량 대수 확인
+	dbo.collection("PARK_STATUS").count({"TYPE":"고객", "OUT_TIME":{$exists:true}}, function(err,numOfNowDatas) {
+		car_all_1_now = numOfNowDatas;
+		if(err) throw err;
+			db.close();
+		});
+  });
+	await Promise.resolve("ok");
+}
+getNumberNowAll1OfCar().then();
+
+
+//현재 누적 출차된 상점고객차량 대수
+async function getNumberNowAll2OfCar(){
+	MongoClient.connect(uri, function(err, db) {
+	if (err) throw err;
+	const dbo = db.db("JUCHADB");
+	// 주차된 차량 대수 확인
+	dbo.collection("PARK_STATUS").count({"TYPE":"상점고객", "OUT_TIME":{$exists:true}}, function(err,numOfNowDatas) {
+		car_all_2_now = numOfNowDatas;
+		if(err) throw err;
+			db.close();
+		});
+  });
+	await Promise.resolve("ok");
+}
+getNumberNowAll2OfCar().then();
+
+
 //현재 주차되어있는 외부인 차량 대수
 async function getNumberNowOutOfCar(){
 	MongoClient.connect(uri, function(err, db) {
 	if (err) throw err;
 	const dbo = db.db("JUCHADB");
 	// 주차된 차량 대수 확인
-	dbo.collection("PARK_STATUS").count({"TYPE":"방문객", "OUT_TIME":null}, function(err,numOfNowOutDatas) {
+	dbo.collection("PARK_STATUS").count({"TYPE":"고객", "OUT_TIME":null}, function(err,numOfNowOutDatas) {
 		car_now = numOfNowOutDatas;
 		if(err) throw err;
 			db.close();
@@ -65,6 +99,7 @@ async function getNumberPark(){
 	MongoClient.connect(uri, function(err, db) {
     if (err) throw err;
     const dbo = db.db("JUCHADB");
+  
 
     //전체 주차장 주차대수 확인
     dbo.collection("PARK_AREA").find({"PARK_NUM":"1"}, {projection:{_id:0,id:0}}).toArray(function(err,result) {
@@ -113,6 +148,14 @@ app.get("/status/car/space/now/all", (req, res) => {
   getNumberNowOfCar();
   res.json({park_setting : { TOTAL_SPACE:park_number, RENTAL_SPACE:park_usenumber ,"현재 전체 주차 대수":car_all_now}});
 });
+
+//---------------------------------------------------------------------------------
+
+//오늘 하루 현재 누적 출차된 차량
+app.get("/status/car/space/now/all/today", (req, res) => {
+  res.json({park_setting : { TOTAL_SPACE:park_number, RENTAL_SPACE:park_usenumber ,CAR_COUNT:car_all_1_now+car_all_2_now}});
+});
+
 
 
 
@@ -273,15 +316,61 @@ app.post("/status/car/data/modify/carnumber", (req, res) => {
 })
 
 //======================================================================================================================
-//주차현황 수정(차량번호)
+//주차장 사양 추가
 
-app.post("/status/car/data/modify/type", (req, res) => {
+app.post("/status/car/data/add/park", (req, res) => {
   MongoClient.connect(uri, function(err, db) {
-    const car_number = req.body.car_number
-    const type = req.body.type
+    const park_num = req.body.park_num
+    const total_space = req.body.total_space
+    const rental_space = req.body.rental_space
     if (err) throw err;
     const dbo = db.db("JUCHADB");
-    dbo.collection("PARK_STATUS").updateMany({"CAR_NUM" : car_number}, {$set:{"TYPE" : type}}, {upsert: true})
+    dbo.collection("PARK_AREA").insertMany([{PARK_NUM : park_num, RENTAL_SPACE : rental_space, TOTAL_SPACE : total_space}])
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//======================================================================================================================
+//주차장 사양 수정(total_space)
+
+app.post("/status/car/data/modify/park/total", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const park_num = req.body.park_num
+    const total_space = req.body.total_space
+    if (err) throw err;
+    const dbo = db.db("JUCHADB");
+    dbo.collection("PARK_AREA").updateMany({"PARK_NUM" : park_num}, {$set:{"TOTAL_SPACE" : total_space}}, {upsert: true})
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//======================================================================================================================
+//주차장 사양 수정(rental_space)
+
+app.post("/status/car/data/modify/park/rental", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const park_num = req.body.park_num
+    const rental_space = req.body.rental_space
+    if (err) throw err;
+    const dbo = db.db("JUCHADB");
+    dbo.collection("PARK_AREA").updateMany({"PARK_NUM" : park_num}, {$set:{"RENTAL_SPACE" : rental_space}}, {upsert: true})
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+  })
+//======================================================================================================================
+//주차장 사양 수정(둘다)
+
+app.post("/status/car/data/modify/park/double", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const park_num = req.body.park_num
+    const total_space = req.body.total_space
+    const rental_space = req.body.rental_space
+    if (err) throw err;
+    const dbo = db.db("JUCHADB");
+    dbo.collection("PARK_AREA").updateMany({"PARK_NUM" : park_num}, {$set:{"TOTAL_SPACE" : total_space, "RENTAL_SPACE": rental_space}}, {upsert: true})
       if (err) throw err;
       res.json({status : "success"});
     });

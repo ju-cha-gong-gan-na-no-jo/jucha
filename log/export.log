@@ -1,0 +1,6 @@
+2022-03-26T01:41:01.994+0000	connected to: mongodb+srv://[**REDACTED**]@cluster0.ymswf.mongodb.net/JUCHADB?retryWrites=true&w=majority
+2022-03-26T01:41:02.002+0000	exported 6 records
+2022-03-26T01:41:02.103+0000	connected to: mongodb+srv://[**REDACTED**]@cluster0.ymswf.mongodb.net/JUCHADB?retryWrites=true&w=majority
+2022-03-26T01:41:02.111+0000	exported 5 records
+PARK_AREA.csv
+PARK_STATUS.csv
