@@ -50,7 +50,7 @@ async function getNumberNowAll1OfCar(){
 	if (err) throw err;
 	const dbo = db.db("JUCHADB");
 	// 주차된 차량 대수 확인
-	dbo.collection("PARK_STATUS").count({"TYPE":"고객", "OUT_TIME":{$exists:true}}, function(err,numOfNowDatas) {
+	dbo.collection("PARK_STATUS").count({"MEMBER_TYPE":"고객", "OUT_TIME":{$exists:true}}, function(err,numOfNowDatas) {
 		car_all_1_now = numOfNowDatas;
 		if(err) throw err;
 			db.close();
@@ -67,7 +67,7 @@ async function getNumberNowAll2OfCar(){
 	if (err) throw err;
 	const dbo = db.db("JUCHADB");
 	// 주차된 차량 대수 확인
-	dbo.collection("PARK_STATUS").count({"TYPE":"상점고객", "OUT_TIME":{$exists:true}}, function(err,numOfNowDatas) {
+	dbo.collection("PARK_STATUS").count({"MEMBER_TYPE":"상점고객", "OUT_TIME":{$exists:true}}, function(err,numOfNowDatas) {
 		car_all_2_now = numOfNowDatas;
 		if(err) throw err;
 			db.close();
@@ -84,7 +84,7 @@ async function getNumberNowOutOfCar(){
 	if (err) throw err;
 	const dbo = db.db("JUCHADB");
 	// 주차된 차량 대수 확인
-	dbo.collection("PARK_STATUS").count({"TYPE":"고객", "OUT_TIME":null}, function(err,numOfNowOutDatas) {
+	dbo.collection("PARK_STATUS").count({"MEMBER_TYPE":"고객", "OUT_TIME":null}, function(err,numOfNowOutDatas) {
 		car_now = numOfNowOutDatas;
 		if(err) throw err;
 			db.close();
@@ -211,7 +211,7 @@ app.post("/status/car/data/add/enter", (req, res) => {
     const type = req.body.type
     if (err) throw err;
     const dbo = db.db("JUCHADB");
-    dbo.collection("PARK_STATUS").insertMany([{CAR_NUM :  car_number, IN_TIME : enter_time, TYPE : type}])
+    dbo.collection("PARK_STATUS").insertMany([{CAR_NUM :  car_number, IN_TIME : enter_time, MEMBER_TYPE : type}])
       if (err) throw err;
       res.json({status : "success"});
     });
@@ -227,7 +227,7 @@ app.post("/status/car/data/add/out", (req, res) => {
     const type = req.body.type
     if (err) throw err;
     const dbo = db.db("JUCHADB");
-    dbo.collection("PARK_STATUS").insertMany([{CAR_NUM : car_number, OUT_TIME : out_time, TYPE : type}])
+    dbo.collection("PARK_STATUS").insertMany([{CAR_NUM : car_number, OUT_TIME : out_time, MEMBER_TYPE : type}])
       if (err) throw err;
       res.json({status : "success"});
     });
@@ -259,7 +259,7 @@ app.post("/status/car/data/detail", (req, res) => {
     dbo.collection("PARK_STATUS").find({
       $or: [
       {"IN_TIME":{$gte:start_time}, "OUT_TIME":{$lte:end_time} },
-      {"DATE":date},
+      {"VISIT_DATE":date},
       {projection:{_id:0}}
       ]
     }).toArray(function(err,result) {
