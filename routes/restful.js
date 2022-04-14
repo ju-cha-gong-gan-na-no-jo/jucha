@@ -182,8 +182,13 @@ app.get("/status/car/space/total", (req, res) => {
 
 //주차장 실시간 주차 가능 공간 확인(고객용)
 app.get("/status/car/space/possible", (req, res) => {
-  getNumberPark();
-  getNumberNowOutOfCar();
+  getNumberOfCar()
+  getNumberNowOfCar()
+  getNumberNowAll1OfCar()
+  getNumberNowAll2OfCar()
+  getNumberNowOutOfCar()
+  getNumberPark()
+  getUseNumberPark()
   res.json({park_usenumber, car_now ,park_setting : { now_place:(park_usenumber - car_now)}});
 });
 
