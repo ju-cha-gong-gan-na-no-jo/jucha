@@ -381,4 +381,52 @@ app.post("/status/car/data/modify/park/double", (req, res) => {
     });
 })
 
+//======================================================================================================================
+//입차 데이터 추가 get
+
+app.get("/status/car/data/add/enter/get", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.query.car_number
+    const enter_time = req.query.enter_time
+    const type = req.query.type
+    if (err) throw err;
+    const dbo = db.db("JUCHADB");
+    dbo.collection("PARK_STATUS").insertMany([{CAR_NUM :  car_number, IN_TIME : enter_time, MEMBER_TYPE : type}])
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//======================================================================================================================
+//출차 데이터 추가
+
+app.get("/status/car/data/add/out/get", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.query.car_number
+    const out_time = req.query.out_time
+    const type = req.query.type
+    if (err) throw err;
+    const dbo = db.db("JUCHADB");
+    dbo.collection("PARK_STATUS").insertMany([{CAR_NUM : car_number, OUT_TIME : out_time, MEMBER_TYPE : type}])
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+//======================================================================================================================
+//주차현황 수정(출차시간) get
+
+app.get("/status/car/data/modify/outtime/get", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    const car_number = req.query.car_number
+    const out_time = req.query.out_time
+    if (err) throw err;
+    const dbo = db.db("JUCHADB");
+    dbo.collection("PARK_STATUS").updateMany({"CAR_NUM" : car_number}, {$set:{"OUT_TIME" : out_time}}, {upsert: true})
+      if (err) throw err;
+      res.json({status : "success"});
+    });
+})
+
+
 module.exports = app;
