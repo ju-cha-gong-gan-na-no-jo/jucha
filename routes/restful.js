@@ -10,6 +10,9 @@ app.use(bodyParser.urlencoded({extended : false}));
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
 
+
+
+
 //몽고의 차량 대수 값을 CAR_NUMBER 변수에 넣어주는 함수
 async function getNumberOfCar(){
 	MongoClient.connect(uri, function(err, db) {
@@ -42,7 +45,10 @@ async function getNumberNowOfCar(){
   });
 	await Promise.resolve("ok");
 }
+
 getNumberNowOfCar().then();
+
+
 
 //현재 누적 출차된 고객차량 대수
 async function getNumberNowAll1OfCar(){
@@ -58,6 +64,7 @@ async function getNumberNowAll1OfCar(){
   });
 	await Promise.resolve("ok");
 }
+
 getNumberNowAll1OfCar().then();
 
 
@@ -75,6 +82,7 @@ async function getNumberNowAll2OfCar(){
   });
 	await Promise.resolve("ok");
 }
+
 getNumberNowAll2OfCar().then();
 
 
@@ -92,6 +100,7 @@ async function getNumberNowOutOfCar(){
   });
 	await Promise.resolve("ok");
 }
+
 getNumberNowOutOfCar().then();
      
 //몽고의 주차장 전체공간을 park_number 에 넣어주는 함수
@@ -111,6 +120,7 @@ async function getNumberPark(){
 	});
 	await Promise.resolve("ok");
 }
+
 getNumberPark().then();
 
 //몽고의 주차장 대여공간을 park_usenumber 에 넣어주는 함수
@@ -129,6 +139,7 @@ async function getUseNumberPark(){
 	});
 	await Promise.resolve("ok");
 }
+
 getUseNumberPark().then();
 
 
@@ -145,7 +156,13 @@ app.get("/status/car/space", (req, res) => {
 
 //주차장 실시간 주차 대수 확인(전체)
 app.get("/status/car/space/now/all", (req, res) => {
-  getNumberNowOfCar();
+  getNumberOfCar()
+  getNumberNowOfCar()
+  getNumberNowAll1OfCar()
+  getNumberNowAll2OfCar()
+  getNumberNowOutOfCar()
+  getNumberPark()
+  getUseNumberPark()
   res.json({park_setting : { TOTAL_SPACE:park_number, RENTAL_SPACE:park_usenumber ,"현재 전체 주차 대수":car_all_now}});
 });
 
@@ -153,6 +170,8 @@ app.get("/status/car/space/now/all", (req, res) => {
 
 //오늘 하루 현재 누적 출차된 차량
 app.get("/status/car/space/now/all/today", (req, res) => {
+  getNumberNowAll1OfCar()
+  getNumberNowAll2OfCar()
   res.json({park_setting : { TOTAL_SPACE:park_number, RENTAL_SPACE:park_usenumber ,CAR_COUNT:car_all_1_now+car_all_2_now}});
 });
 
@@ -189,6 +208,7 @@ app.get("/status/car/space/possible", (req, res) => {
   getNumberNowOutOfCar()
   getNumberPark()
   getUseNumberPark()
+  
   res.json({park_usenumber, car_now ,park_setting : { now_place:(park_usenumber - car_now)}});
 });
 
@@ -198,7 +218,7 @@ app.get("/status/car/data/all", (req, res) => {
   MongoClient.connect(uri, function(err, db) {
     if (err) throw err;
     const dbo = db.db("JUCHADB");
-    dbo.collection("PARK_STATUS").find({}, {projection:{_id:0, id:0}}).toArray(function(err,result) {
+    dbo.collection("PARK_STATUS").find({}, {projection:{_id:0, id:0}}).sort({"IN_TIME" : -1}).toArray(function(err,result) {
       if (err) throw err;
       res.json( {current_data : result});
       db.close();
@@ -214,6 +234,11 @@ app.post("/status/car/data/add/enter", (req, res) => {
     const car_number = req.body.car_number
     const enter_time = req.body.enter_time
     const type = req.body.type
+
+    console.log(car_number)
+    console.log(enter_time)
+    console.log(type)
+
     if (err) throw err;
     const dbo = db.db("JUCHADB");
     dbo.collection("PARK_STATUS").insertMany([{CAR_NUM :  car_number, IN_TIME : enter_time, MEMBER_TYPE : type}])
