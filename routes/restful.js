@@ -141,8 +141,25 @@ async function getUseNumberPark(){
 }
 
 getUseNumberPark().then();
+//------------------------------------------------------------------------------------------
+//전체 인원PARK_NUMBER에 넣어주는 함수
+async function getNumberPark2(){
+	MongoClient.connect(uri, function(err, db) {
+	  if (err) throw err;
+	  const dbo = db.db("JUCHADB");
 
-
+	// 전체대수확인
+	  dbo.collection("PARK_STATUS").count({"OUT_TIME":null}, function(err, jucha_number){
+		  console.log(jucha_number)
+      PARK_NUMBER = 30-jucha_number;
+      PARK_GONGAN = 10*PARK_NUMBER/3
+		  if(err) throw err;
+		  	db.close();
+		  });
+	});
+	await Promise.resolve("ok");
+}
+getNumberPark2().then();
 //---------------------------------------------------------------------------------
 
 //13쪽 주차장 사양조회
@@ -163,7 +180,8 @@ app.get("/status/car/space/now/all", (req, res) => {
   getNumberNowOutOfCar()
   getNumberPark()
   getUseNumberPark()
-  res.json({park_setting : { TOTAL_SPACE:park_number, RENTAL_SPACE:park_usenumber ,"현재 전체 주차 대수":car_all_now}});
+  getNumberPark2()
+  res.json({park_setting : { PARK_NUMBER,PARK_GONGAN,TOTAL_SPACE:park_number, RENTAL_SPACE:park_usenumber ,"현재 전체 주차 대수":car_all_now}});
 });
 
 //---------------------------------------------------------------------------------
@@ -451,6 +469,20 @@ app.get("/status/car/data/modify/outtime/get", (req, res) => {
       if (err) throw err;
       res.json({status : "success"});
     });
+})
+
+//-----------------------------------------------------------------------------------
+//14쪽 실시간 현황 데이터 조회
+app.get("/status/car/data/all/cli", (req, res) => {
+  MongoClient.connect(uri, function(err, db) {
+    if (err) throw err;
+    const dbo = db.db("JUCHADB");
+    dbo.collection("PARK_STATUS").find({"MEMBER_TYPE" : "고객"}, {projection:{_id:0, id:0}}).sort({"IN_TIME" : -1}).toArray(function(err,result) {
+      if (err) throw err;
+      res.json( {current_data : result});
+      db.close();
+    });
+  });
 })
 
 
