@@ -1,8 +1,8 @@
 const express =require("express");
 const bodyParser = require('body-parser');
 const app = express();
-const { MongoClient } = require('mongodb');
-const env =require("dotenv").config({ path: "/home/bitnami/park/.env"});
+const { MongoClient } = require('mongodb');                                   # 몽고 아틀라스 연결
+const env =require("dotenv").config({ path: "/home/bitnami/park/.env"});        # 키 숨기기
 var uri = process.env.uri;
 var urp = process.env.urp;
 app.use(bodyParser.json());
